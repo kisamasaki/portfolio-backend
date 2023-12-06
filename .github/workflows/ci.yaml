@@ -62,16 +62,16 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     
       - name: Tag Docker image
-        run: docker tag portfolio-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/portfolio-portfolio-backend:latest
+        run: docker tag portfolio-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/portfolio-backend:latest
     
       - name: Push Docker image to ECR
-        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/portfolio-portfolio-backend:latest
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/portfolio-backend:latest
 
       - name: Log in to Docker Hub
         run: docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Tag Docker image for Docker Hub
-        run: docker tag portfolio-backend:latest ${{ secrets.DOCKER_USERNAME }}/portfolio-portfolio-backend:latest
+        run: docker tag portfolio-backend:latest ${{ secrets.DOCKER_USERNAME }}/portfolio-backend:latest
 
       - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/portfolio-portfolio-backend:latest        
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/portfolio-backend:latest        
