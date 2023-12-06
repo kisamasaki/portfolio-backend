@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        ports:
+          - 5435:5432
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+        options: --health-cmd "pg_isready" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.11
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --disable-all --enable=govet,errcheck,staticcheck,gosimple
+
+      - name: Run database migrations
+        run: go run ./migrate/migrate.go
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PW: testpassword
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5435
+          POSTGRES_DB: testdb
+
+      - name: test
+        run: go test -v ./...
+
+      - name: Build Docker image
+        run: docker build -t portfolio-backend:latest .
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+    
+      - name: Log in to Amazon ECR
+        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+      - name: Tag Docker image
+        run: docker tag portfolio-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/portfolio-portfolio-backend:latest
+    
+      - name: Push Docker image to ECR
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/portfolio-portfolio-backend:latest
+
+      - name: Log in to Docker Hub
+        run: docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Tag Docker image for Docker Hub
+        run: docker tag portfolio-backend:latest ${{ secrets.DOCKER_USERNAME }}/portfolio-portfolio-backend:latest
+
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/portfolio-portfolio-backend:latest        

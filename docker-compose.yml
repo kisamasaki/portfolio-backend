@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  dev-postgres:
+    image: postgres:15.1-alpine
+    ports:
+      - 5434:5432
+    environment:
+      POSTGRES_USER: portfolio
+      POSTGRES_PASSWORD: portfolio
+      POSTGRES_DB: portfolio
+    # 異常終了後再起動する
+    restart: always
+    networks:
+      - lesson
+
+  test-postgres:
+    image: postgres:15.1-alpine
+    ports:
+      - 5435:5432 # 異なるポート番号を使用
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: testdb
+    restart: always
+    networks:
+      - lesson
+
+networks:
+  lesson:
